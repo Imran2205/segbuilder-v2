@@ -20,6 +20,27 @@ from ..resources import get_db_item, put_db_item
 
 CANVAS_WIDTH = 600
 
+def _component_children(component):
+    if not component:
+        return []
+    if isinstance(component, dict):
+        children = component.get("props", {}).get("children", [])
+    else:
+        children = getattr(component, "children", [])
+    if not children:
+        return []
+    if isinstance(children, list):
+        return children
+    return [children]
+
+def _merge_mask_card_components(first_component, second_component):
+    first_children = _component_children(first_component)
+    second_children = _component_children(second_component)
+    return html.Div(
+        first_children + second_children,
+        style={"display": "flex", "flex-wrap": "wrap", "gap":"10px"},
+    )
+
 def register_ui_callbacks(app):
 
     @app.callback(
@@ -340,7 +361,10 @@ def register_ui_callbacks(app):
 
             # Load the image and the mask to move
             image = image_obj.load_image()
-            mask_to_move = image_obj.load_masks()[mask_num]
+            masks = image_obj.load_masks()
+            if mask_num >= len(masks) or mask_num >= len(curr_labels):
+                raise PreventUpdate
+            mask_to_move = masks[mask_num]
 
             # Get label options for the project
             label_options = get_label_options(username,selected_project)
@@ -389,7 +413,10 @@ def register_ui_callbacks(app):
 
             # Load the mask to be edited
             image_obj = SB_project_image(username,selected_project,selected_image_name)
-            mask_to_edit = image_obj.load_masks()[mask_num]
+            masks = image_obj.load_masks()
+            if mask_num >= len(masks):
+                raise PreventUpdate
+            mask_to_edit = masks[mask_num]
 
             # Convert the mask segmentation data into contours
             contours = contours_from_mask(mask_to_edit["segmentation"])
@@ -520,6 +547,8 @@ def register_ui_callbacks(app):
         # Handle when the user clicks the "Generate Manual Mask" button after having
         # drawn on the image with the Plotly closed path tool
         elif callback_context.triggered_id == "generate-manual-mask-button":
+            if not closed_paths:
+                raise PreventUpdate
             image_obj = SB_project_image(username,selected_project,selected_image_name)
             image = image_obj.load_image()
             logging.debug("closed_paths %s",closed_paths)
@@ -527,10 +556,10 @@ def register_ui_callbacks(app):
             masks_meta = add_meta_info_to_masks([new_mask])
             label_options = get_label_options(username,selected_project)
             #logging.debug("label_options",label_options)
-            new_row = create_mask_cards(image,masks_meta,[label_options[0]],label_options=label_options,new_masks=True,index_offset=len(current_new_display_cards))
-            new_display_cards = new_row
+            new_row = create_mask_cards(image,masks_meta,[label_options[0]],label_options=label_options,new_masks=True,index_offset=len(_component_children(current_new_display_cards)))
+            new_display_cards = _merge_mask_card_components(new_row, None)
             if current_new_display_cards:
-                new_display_cards += current_new_display_cards
+                new_display_cards = _merge_mask_card_components(new_row, current_new_display_cards)
             new_masks_store = masks_meta
             if current_new_masks:
                 new_masks_store += current_new_masks
@@ -579,9 +608,9 @@ def register_ui_callbacks(app):
         
         # Handle when the user clicks to move an existing mask to the front
         elif callback_context.triggered_id == "mask-card-move-to-front":
-            new_display_cards = new_front_mask_card
+            new_display_cards = _merge_mask_card_components(new_front_mask_card, None)
             if current_new_display_cards:
-                new_display_cards += current_new_display_cards
+                new_display_cards = _merge_mask_card_components(new_front_mask_card, current_new_display_cards)
             new_masks_store = [new_front_mask]
             if current_new_masks:
                 new_masks_store += current_new_masks
@@ -592,12 +621,17 @@ def register_ui_callbacks(app):
             image_obj = SB_project_image(username,selected_project,selected_image_name)
             image = image_obj.load_image()
             mask_num = callback_context.triggered_id["index"]
+            if mask_num >= len(current_new_masks) or mask_num >= len(new_labels):
+                raise PreventUpdate
             new_front_mask = current_new_masks[mask_num]
+            current_new_display_cards = _component_children(current_new_display_cards)
+            if mask_num >= len(current_new_display_cards):
+                raise PreventUpdate
             current_new_display_cards.pop(mask_num)
             label_options = get_label_options(username,selected_project)
             new_display_cards = create_mask_cards(image,[new_front_mask],[new_labels[mask_num]],label_options=label_options,new_masks=True,index_offset=len(current_new_display_cards))
             if current_new_display_cards:
-                new_display_cards += current_new_display_cards
+                new_display_cards = _merge_mask_card_components(new_display_cards, html.Div(current_new_display_cards))
             new_masks_store = [new_front_mask]
             if current_new_masks:
                 new_masks_store += current_new_masks
@@ -632,6 +666,8 @@ def register_ui_callbacks(app):
         """
         logging.debug("shape data  %s",shape_data)
 
+        if not shape_data:
+            raise PreventUpdate
 
         coords = [] # for non-closed paths
         closed_paths = [] # for closed paths

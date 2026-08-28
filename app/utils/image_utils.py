@@ -16,6 +16,8 @@ def create_mask_from_paths(path_coordinates, img_shape):
     :return: A binary mask with True values inside the paths.
     """
     height, width, _ = img_shape
+    if not path_coordinates:
+        return np.zeros((height, width), dtype=bool)
 
     # Create a meshgrid of (x, y) coordinates
     x, y = np.meshgrid(np.arange(width),np.arange(height))
@@ -220,5 +222,4 @@ def make_composite_image(image,mask_image):
     display_mask_image = 'data:image/png;base64,{}'.format(encode_img_for_display(cv2.cvtColor(mask_image, cv2.COLOR_BGR2RGB)))
     
     return mask_composite_image, display_mask_image
-
 

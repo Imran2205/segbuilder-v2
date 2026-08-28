@@ -88,15 +88,26 @@ class SB_project_image:
         The .sgbdi files are archives, which are pickled dictionaries that have been gzipped
         """
         compressed_data = load_file(self.__masks_path)
-        #with open(self.__masks_path,'rb') as masks_file:
-        #    compressed_data = masks_file.read()
-        decompressed_pickle_data = gzip.decompress(compressed_data)
-        data = pickle.loads(decompressed_pickle_data)       
-        self.__masks = data["masks"]
+        if not compressed_data:
+            logging.warning("Mask archive is missing or empty: %s", self.__masks_path)
+            self.__masks = []
+            self.__labels = []
+            return
+
+        try:
+            decompressed_pickle_data = gzip.decompress(compressed_data)
+            data = pickle.loads(decompressed_pickle_data)
+            self.__masks = data.get("masks", [])
+            self.__labels = data.get("labels", [])
+        except (EOFError, gzip.BadGzipFile, OSError, pickle.UnpicklingError, KeyError) as error:
+            logging.warning("Could not load mask archive %s: %s", self.__masks_path, error)
+            self.__masks = []
+            self.__labels = []
+            return
+
         #need to make the segments back into numpy arrays instead of lists
         for idx in range(len(self.__masks)):
             self.__masks[idx]["segmentation"] = np.array(self.__masks[idx]["segmentation"])
-        self.__labels = data["labels"]
 
     def get_filename(self):
         """
@@ -112,8 +123,9 @@ class SB_project_image:
         
         :return: True if masks exist, False otherwise.
         """
-        result = file_exists(self.__masks_path)
-        return result
+        if not file_exists(self.__masks_path):
+            return False
+        return len(self.load_masks()) > 0
     
     def has_segmented_image(self):
         """
@@ -138,7 +150,7 @@ class SB_project_image:
         
         :return: The path to the segmented image.
         """
-        if not self.__masks:
+        if self.__masks is None:
             self.__unpack_archive()
         return self.__masks
     
@@ -148,7 +160,7 @@ class SB_project_image:
         
         :return: The list of labels.
         """
-        if not self.__labels:
+        if self.__labels is None:
             self.__unpack_archive()
         return self.__labels
     
@@ -181,6 +193,8 @@ class SB_project_image:
         if not new_masks:
             new_masks = []
             new_mask_labels = []
+        if not old_mask_labels:
+            old_mask_labels = []
         old_masks = self.load_masks()
         logging.debug("length of new and old masks: %s, %s",len(new_masks),len(old_masks))
         combined_masks = new_masks+old_masks
