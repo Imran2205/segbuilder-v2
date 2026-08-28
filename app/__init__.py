@@ -37,7 +37,7 @@ def local_storage_file(filename):
 login_manager.init_app(application)
 
 # Initialize Dash application with Flask as server
-app = dash.Dash(__name__, server=application, title="SegBuilder",
+app = dash.Dash(__name__, server=application, title="SegBuilder v2",
                 url_base_pathname='/', external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
 # Importing layouts and callbacks after app initialization to avoid circular imports

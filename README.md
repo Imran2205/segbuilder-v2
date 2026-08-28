@@ -1,6 +1,6 @@
-# SegBuilder
+# SegBuilder v2
 
-SegBuilder is a local Dash application for labeling SAM-generated segmentations
+SegBuilder v2 is a local Dash application for labeling SAM-generated segmentations
 for downstream computer vision applications. It stores all application data on
 your computer; Docker and AWS are not required.
 
@@ -13,7 +13,7 @@ Run:
 ```
 
 The launcher creates a private Python environment, installs dependencies when
-needed, and starts SegBuilder. Then open <http://127.0.0.1:8050>.
+needed, and starts SegBuilder v2. Then open <http://127.0.0.1:8050>.
 
 ## Manual install
 
@@ -35,7 +35,7 @@ python3 run.py
 
 Then open <http://127.0.0.1:8050>.
 
-On the first launch, SegBuilder automatically creates:
+On the first launch, SegBuilder v2 automatically creates:
 
 - `local_db.json` for users, projects, and class definitions
 - `local_storage/` for images, masks, and project files

@@ -9,7 +9,7 @@ if [[ ! -x .venv/bin/python ]]; then
 fi
 
 if ! .venv/bin/python -c "import cv2, dash, flask" >/dev/null 2>&1; then
-    echo "Installing SegBuilder dependencies..."
+    echo "Installing SegBuilder v2 dependencies..."
     .venv/bin/python -m pip install -r requirements.txt
 fi
 

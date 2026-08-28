@@ -17,7 +17,7 @@ def get_main_layout():
         dbc.Row([
             dbc.Col(html.Img(src="assets/eyelogo.png", height=100), width='auto'),
             dbc.Col(children=[
-                html.H1(children="SegBuilder"),
+                html.H1(children="SegBuilder v2"),
                 html.H4(children="Machine-Assisted Semantic Segmentation Annotation"),
             ]),
             dbc.Col(children=[
@@ -34,6 +34,6 @@ def get_main_layout():
 
         # Login content section with spinner
         dbc.Spinner(html.Div(get_login_layout(), id='login-content', style={"display": "block"}), color="primary"),
-        # Main content section for SegBuilder UI
+        # Main content section for SegBuilder v2 UI
         html.Div(get_segbuilder_layout(), id='main-content', style={"display": "none"})
     ])
