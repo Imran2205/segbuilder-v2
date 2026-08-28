@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+debug.log
+logs/
+local_db.json
+local_storage/
